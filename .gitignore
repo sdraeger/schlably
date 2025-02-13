@@ -98,3 +98,5 @@ config/testing/ppo_masked/*
 !config/testing/ppo_masked/schema.json
 
 __pycache__/
+*.pkl
+**/*.pkl
