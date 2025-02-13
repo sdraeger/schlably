@@ -96,3 +96,5 @@ config/testing/ppo_masked/*
 !config/testing/dqn/schema.json
 !config/testing/ppo/schema.json
 !config/testing/ppo_masked/schema.json
+
+__pycache__/
