@@ -19,9 +19,10 @@ Constants:
 LOG_MODE and WANDB_PROJECT can also be set in training config.
 
 """
+
 import os
 import wandb
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from collections import defaultdict
 from pathlib import Path
 import PIL.Image
@@ -29,12 +30,26 @@ import PIL.Image
 
 # Constants
 LOG_MODE_DEFAULT: int = 0
-WANDB_PROJECT: str = 'project-1'
-WANDB_ENTITY: str = 'scheduling-sandbox-1'
-WANDB_DIRECTORY: Path = Path(__file__).parent.parent.parent / 'data'
-WANDB_TABLE_COLUMNS: List[str] = ["Agent", "Reward", "Makespan", "Tardiness", "Ganttchart"]
-WANDB_FINAL_EVALUATION_TABLE_COLUMNS: List[str] = ['Agent', 'Mean Reward', 'Mean Tardiness', 'Tardiness Max',
-                                                   'Mean Makespan', 'Makespan STD', 'Tardiness STD', 'Gap To Solver']
+WANDB_PROJECT: str = "project-1"
+WANDB_ENTITY: Optional[str] = None
+WANDB_DIRECTORY: Path = Path(__file__).parent.parent.parent / "data"
+WANDB_TABLE_COLUMNS: List[str] = [
+    "Agent",
+    "Reward",
+    "Makespan",
+    "Tardiness",
+    "Ganttchart",
+]
+WANDB_FINAL_EVALUATION_TABLE_COLUMNS: List[str] = [
+    "Agent",
+    "Mean Reward",
+    "Mean Tardiness",
+    "Tardiness Max",
+    "Mean Makespan",
+    "Makespan STD",
+    "Tardiness STD",
+    "Gap To Solver",
+]
 
 
 class Logger:
@@ -46,8 +61,9 @@ class Logger:
     :param: config: Training config
 
     """
+
     def __init__(self, config: dict):
-        self.log_mode = config.get('wandb_mode', LOG_MODE_DEFAULT)
+        self.log_mode = config.get("wandb_mode", LOG_MODE_DEFAULT)
         self.record_buffer: Dict[str, Any] = defaultdict(Any)
         self.config = config
 
@@ -69,7 +85,7 @@ class Logger:
             if log_key not in self.record_buffer.keys():
                 self.record_buffer[log_key] = log_val
             else:
-                Warning('You are overwriting a log record before it has been dumped!')
+                Warning("You are overwriting a log record before it has been dumped!")
                 self.record_buffer[log_key] = log_val
 
     def clear_buffer(self) -> None:
@@ -130,9 +146,14 @@ class Logger:
         if self.check_wandb():
             # Set wandb mode offline if requested (has to be set before calling wandb.init())
             if self.log_mode == 1:
-                os.environ['WANDB_MODE'] = 'offline'
-            self.wandb_run = wandb.init(project=self.config.get('wandb_project', WANDB_PROJECT), entity=WANDB_ENTITY,
-                                        config=self.config, reinit=True, dir=WANDB_DIRECTORY)
+                os.environ["WANDB_MODE"] = "offline"
+            self.wandb_run = wandb.init(
+                project=self.config.get("wandb_project", WANDB_PROJECT),
+                entity=WANDB_ENTITY,
+                config=self.config,
+                reinit=True,
+                dir=WANDB_DIRECTORY,
+            )
 
             # overwrite logger config with wandb config (e.g. for the case wandb config was changed by sweep)
             self.config = dict(wandb.config.items())
@@ -149,13 +170,20 @@ class Logger:
         """
         # Log only if wandb has been initialized
         if self.wandb_run:
-            assert 'name' in artifact_info.keys() and 'type' in artifact_info.keys(),\
-                "Please specify 'name' and  'type' in artifact_info when trying to create an log an wandb artifact"
+            assert (
+                "name" in artifact_info.keys() and "type" in artifact_info.keys()
+            ), "Please specify 'name' and  'type' in artifact_info when trying to create an log an wandb artifact"
             task_file: wandb.Artifact = wandb.Artifact(**artifact_info)
-            task_file.add_file(file_path) if file_path else Warning('Artifact has been logged without adding a file')
+            (
+                task_file.add_file(file_path)
+                if file_path
+                else Warning("Artifact has been logged without adding a file")
+            )
             self.wandb_run.log_artifact(task_file)
 
-    def add_row_to_wandb_table(self, agent: str, gantt_chart: PIL.Image,  **kwargs) -> None:
+    def add_row_to_wandb_table(
+        self, agent: str, gantt_chart: PIL.Image, **kwargs
+    ) -> None:
         """
         Add the recent gantt_chart and kwargs as row to the table in the record buffer.
         The table will be logged to wandb when calling dump
@@ -178,7 +206,9 @@ class Logger:
             log_data.append(wandb.Image(gantt_chart))
             self.wandb_table.add_data(*log_data)
             # overwrite the current state of table in the buffer
-            self.record_buffer['test_table'] = wandb.Table(data=self.wandb_table.data, columns=self.wandb_table.columns)
+            self.record_buffer["test_table"] = wandb.Table(
+                data=self.wandb_table.data, columns=self.wandb_table.columns
+            )
 
     def write_to_wandb_summary(self, evaluation_results: dict):
         """
@@ -190,17 +220,19 @@ class Logger:
 
         """
         if self.wandb_run:
-            final_evaluation_table = wandb.Table(columns=WANDB_FINAL_EVALUATION_TABLE_COLUMNS)
+            final_evaluation_table = wandb.Table(
+                columns=WANDB_FINAL_EVALUATION_TABLE_COLUMNS
+            )
             # iterate overall all agent whose results are saved in evaluation_results
             for agent in evaluation_results.keys():
                 log_data = []
                 log_data.append(str(agent))
-                log_data.append(evaluation_results[agent]['rew_mean'])
-                log_data.append(evaluation_results[agent]['tardiness_mean'])
-                log_data.append(evaluation_results[agent]['tardiness_max_mean'])
-                log_data.append(evaluation_results[agent]['makespan_mean'])
-                log_data.append(evaluation_results[agent]['rew_std'])
-                log_data.append(evaluation_results[agent]['tardiness_std'])
-                log_data.append(evaluation_results[agent]['gap_to_solver'])
+                log_data.append(evaluation_results[agent]["rew_mean"])
+                log_data.append(evaluation_results[agent]["tardiness_mean"])
+                log_data.append(evaluation_results[agent]["tardiness_max_mean"])
+                log_data.append(evaluation_results[agent]["makespan_mean"])
+                log_data.append(evaluation_results[agent]["rew_std"])
+                log_data.append(evaluation_results[agent]["tardiness_std"])
+                log_data.append(evaluation_results[agent]["gap_to_solver"])
                 final_evaluation_table.add_data(*log_data)
-            self.wandb_run.log({'Final Evaluation Table': final_evaluation_table})
+            self.wandb_run.log({"Final Evaluation Table": final_evaluation_table})

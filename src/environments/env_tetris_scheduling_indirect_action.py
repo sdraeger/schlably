@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from typing import List
-from gym import spaces
+from gymnasium import spaces
 from numpy import ndarray
 
 from src.data_generator.task import Task
@@ -28,6 +28,7 @@ class IndirectActionEnv(Env):
     :param data: Scheduling problem to be solved, so a list of instances
 
     """
+
     def __init__(self, config: dict, data: List[List[Task]]):
 
         super(IndirectActionEnv, self).__init__(config, data)
@@ -51,17 +52,19 @@ class IndirectActionEnv(Env):
 
         """
         # check if action_mode was set
-        action_mode = 'agent'  # set default, if the action mode is not defined assuming agent is taking it
-        if 'action_mode' in kwargs.keys():
-            action_mode = kwargs['action_mode']
+        action_mode = "agent"  # set default, if the action mode is not defined assuming agent is taking it
+        if "action_mode" in kwargs.keys():
+            action_mode = kwargs["action_mode"]
 
-        if action_mode == 'agent':
+        if action_mode == "agent":
             # get selected action via indirect action mapping
             next_tasks = self.get_next_tasks()
-            next_runtimes = copy.deepcopy([task.runtime if task is not None else np.inf for task in next_tasks])
+            next_runtimes = copy.deepcopy(
+                [task.runtime if task is not None else np.inf for task in next_tasks]
+            )
             next_runtimes = np.array(next_runtimes) / self.max_runtime
-            action = np.argmin(abs(next_runtimes - (action/9)))
-        elif action_mode == 'heuristic':
+            action = np.argmin(abs(next_runtimes - (action / 9)))
+        elif action_mode == "heuristic":
             # action remains the same
             pass
 
@@ -81,7 +84,7 @@ class IndirectActionEnv(Env):
 
         # update variables and track reward
         action_mask = self.get_action_mask()
-        infos = {'mask': action_mask}
+        infos = {"mask": action_mask}
         observation = self.state_obs
         reward = self.compute_reward()
         self.reward_history.append(reward)
@@ -129,7 +132,11 @@ class IndirectActionEnv(Env):
 
         # clear episode rewards after all training data has passed once. Stores info across runs.
         if self.data_idx == 0:
-            self.episodes_makespans, self.episodes_rewards, self.episodes_tardinesses = ([], [], [])
+            (
+                self.episodes_makespans,
+                self.episodes_rewards,
+                self.episodes_tardinesses,
+            ) = ([], [], [])
             self.iterations_over_data += 1
 
         # load new instance every run
@@ -137,7 +144,9 @@ class IndirectActionEnv(Env):
         self.tasks = copy.deepcopy(self.data[self.data_idx])
         if self.shuffle:
             np.random.shuffle(self.tasks)
-        self.task_job_mapping = {(task.job_index, task.task_index): i for i, task in enumerate(self.tasks)}
+        self.task_job_mapping = {
+            (task.job_index, task.task_index): i for i, task in enumerate(self.tasks)
+        }
 
         # retrieve maximum deadline of the current instance
         max_deadline = max([task.deadline for task in self.tasks])
@@ -174,23 +183,29 @@ class IndirectActionEnv(Env):
             if task.done:
                 pass
             if not task.done:
-                remaining_processing_times_on_machines[np.argwhere(task.machines)] += task.runtime
+                remaining_processing_times_on_machines[
+                    np.argwhere(task.machines)
+                ] += task.runtime
                 remaining_processing_times_per_job[task.job_index] += task.runtime
-                if task.task_index == next_tasks[task.job_index]:  # next task of the job
+                if (
+                    task.task_index == next_tasks[task.job_index]
+                ):  # next task of the job
                     operation_time_of_next_task_per_job[task.job_index] += task.runtime
                     machines_for_next_task_per_job[task.job_index] = task.machines
 
         # normalization
-        remaining_processing_times_on_machines /= (self.num_jobs * self.max_runtime)
-        remaining_processing_times_per_job /= (self.num_tasks * self.max_runtime)
+        remaining_processing_times_on_machines /= self.num_jobs * self.max_runtime
+        remaining_processing_times_per_job /= self.num_tasks * self.max_runtime
         operation_time_of_next_task_per_job /= self.max_runtime
 
-        observation = np.concatenate([
-            remaining_processing_times_on_machines,
-            remaining_processing_times_per_job,
-            operation_time_of_next_task_per_job,
-            machines_for_next_task_per_job.flatten()
-        ])
+        observation = np.concatenate(
+            [
+                remaining_processing_times_on_machines,
+                remaining_processing_times_per_job,
+                operation_time_of_next_task_per_job,
+                machines_for_next_task_per_job.flatten(),
+            ]
+        )
 
         self._state_obs = observation
         return self._state_obs
@@ -207,8 +222,11 @@ class IndirectActionEnv(Env):
         :return: Action mask
 
         """
-        job_mask = np.where(self.job_task_state < self.num_tasks,
-                            np.ones(self.num_jobs, dtype=int), np.zeros(self.num_jobs, dtype=int))
+        job_mask = np.where(
+            self.job_task_state < self.num_tasks,
+            np.ones(self.num_jobs, dtype=int),
+            np.zeros(self.num_jobs, dtype=int),
+        )
 
         self.last_mask = job_mask
         return job_mask
