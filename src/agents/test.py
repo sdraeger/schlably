@@ -27,6 +27,8 @@ from src.data_generator.task import Task
 from src.agents.train_test_utility_functions import get_agent_class_from_config, load_config, load_data
 from src.agents.solver import OrToolSolver
 
+from src.visuals_generator.graphs import save_comparison_graphs
+
 # constants
 TEST_HEURISTICS: List[str] = ['rand', 'EDD', 'SPT', 'MTR', 'LTR']
 
@@ -247,6 +249,8 @@ def get_perser_args():
                         help='Path to config file you want to use for training')
     parser.add_argument('-plot', '--plot-ganttchart', dest="plot_ganttchart", action="store_true",
                         help='Enable or disable model result plot.')
+    parser.add_argument('-gd', '--graphs_directory', type=str, default="./images/",
+                    help='Directory to save the comparison graphs (default: ./images/)')
 
     args = parser.parse_args()
 
@@ -276,7 +280,9 @@ def main(external_config=None):
                                        plot_ganttchart=parse_args.plot_ganttchart, logger=logger)
     print(results)
     plt.show()
-
+    
+    directory = parse_args.graphs_directory
+    save_comparison_graphs(results, directory)
 
 if __name__ == '__main__':
 
