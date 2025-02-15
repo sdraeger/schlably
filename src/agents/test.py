@@ -11,6 +11,7 @@ You can adapt the heuristics used for testing in the TEST_HEURISTICS constant. A
 
 When running the file from a console you can use --plot-ganttchart to show the generated gantt_chart figures.
 """
+
 import argparse
 from matplotlib import pyplot as plt
 from typing import Tuple, List, Dict, Union
@@ -24,16 +25,22 @@ from src.utils.logger import Logger
 from src.utils.file_handler.data_handler import DataHandler
 from src.utils.file_handler.model_handler import ModelHandler
 from src.data_generator.task import Task
-from src.agents.train_test_utility_functions import get_agent_class_from_config, load_config, load_data
+from src.agents.train_test_utility_functions import (
+    get_agent_class_from_config,
+    load_config,
+    load_data,
+)
 from src.agents.solver import OrToolSolver
 
 from src.visuals_generator.graphs import save_comparison_graphs
 
 # constants
-TEST_HEURISTICS: List[str] = ['rand', 'EDD', 'SPT', 'MTR', 'LTR']
+TEST_HEURISTICS: List[str] = ["rand", "EDD", "SPT", "MTR", "LTR"]
 
 
-def get_action(env, model, heuristic_id: str, heuristic_agent: Union[HeuristicSelectionAgent, None]) -> Tuple[int, str]:
+def get_action(
+    env, model, heuristic_id: str, heuristic_agent: Union[HeuristicSelectionAgent, None]
+) -> Tuple[int, str]:
     """
     This function determines the next action according to the input model or heuristic
 
@@ -45,24 +52,27 @@ def get_action(env, model, heuristic_id: str, heuristic_agent: Union[HeuristicSe
     :return: ID of the selected action
 
     """
-    assert bool(heuristic_id) != bool(model), \
-        "You have to pass an agent model XOR a heuristic id to solve the scheduling problem"
+    assert bool(heuristic_id) != bool(
+        model
+    ), "You have to pass an agent model XOR a heuristic id to solve the scheduling problem"
     obs = env.state_obs
     mask = env.get_action_mask()
 
     if heuristic_id:
-        action_mode = 'heuristic'
+        action_mode = "heuristic"
         tasks = env.tasks
         task_mask = mask
         selected_action = heuristic_agent(tasks, task_mask, heuristic_id)
     else:
-        action_mode = 'agent'
+        action_mode = "agent"
         selected_action, _ = model.predict(observation=obs, action_mask=mask)
 
     return selected_action, action_mode
 
 
-def run_episode(env, model, heuristic_id: Union[str, None], handler: EvaluationHandler) -> None:
+def run_episode(
+    env, model, heuristic_id: Union[str, None], handler: EvaluationHandler
+) -> None:
     """
     This function executes one testing episode
 
@@ -107,7 +117,7 @@ def test_solver(config: Dict, data_test: List[List[Task]], logger: Logger) -> Di
     eval_handler = EvaluationHandler()
 
     # for each test instance
-    for instance in tqdm(data_test, desc='Computing solver solution if necessary'):
+    for instance in tqdm(data_test, desc="Computing solver solution if necessary"):
 
         # get instance_hash from first task object
         instance_hash = instance[0].instance_hash
@@ -115,8 +125,10 @@ def test_solver(config: Dict, data_test: List[List[Task]], logger: Logger) -> Di
         solved_instance = DataHandler.load_solved_instance_by_hash(instance_hash)
         # if no solution exists, compute the solution and write it to file for futures use
         if solved_instance is None:
-            assigned_jobs, _ = OrToolSolver.optimize(instance, objective='makespan')
-            solved_instance = OrToolSolver.parse_to_plottable_format(instance, assigned_jobs)
+            assigned_jobs, _ = OrToolSolver.optimize(instance, objective="makespan")
+            solved_instance = OrToolSolver.parse_to_plottable_format(
+                instance, assigned_jobs
+            )
             # write solution to file
             DataHandler.write_solved_instance_by_hash(solved_instance, instance_hash)
 
@@ -124,13 +136,24 @@ def test_solver(config: Dict, data_test: List[List[Task]], logger: Logger) -> Di
         env, _ = EnvironmentLoader.load(config, data=data_test)
         env.tasks = solved_instance
         eval_handler.update_episode_solved_with_solver(env)
-        log_results(plot_logger=logger, inter_test_idx=None, heuristic='solver', env=env, handler=eval_handler)
+        log_results(
+            plot_logger=logger,
+            inter_test_idx=None,
+            heuristic="solver",
+            env=env,
+            handler=eval_handler,
+        )
 
     return eval_handler.evaluate_test()
 
 
-def log_results(plot_logger: Logger, inter_test_idx: Union[int, None], heuristic: str,
-                env, handler: EvaluationHandler) -> None:
+def log_results(
+    plot_logger: Logger,
+    inter_test_idx: Union[int, None],
+    heuristic: str,
+    env,
+    handler: EvaluationHandler,
+) -> None:
     """
     Calls the logger object to save the test results from this episode as table (e.g. makespan mean, gantt chart)
 
@@ -145,8 +168,11 @@ def log_results(plot_logger: Logger, inter_test_idx: Union[int, None], heuristic
     """
 
     # get recent measures for the table
-    measures = {'total_reward': handler.rewards[-1], 'makespan': handler.makespan[-1],
-                'tardiness': handler.tardiness[-1]}
+    measures = {
+        "total_reward": handler.rewards[-1],
+        "makespan": handler.makespan[-1],
+        "tardiness": handler.tardiness[-1],
+    }
 
     gantt_chart = env.render(mode="image")
     # Log chart as table
@@ -156,11 +182,21 @@ def log_results(plot_logger: Logger, inter_test_idx: Union[int, None], heuristic
         if inter_test_idx is None:
             plot_logger.add_row_to_wandb_table("RL-Agent", gantt_chart, **measures)
         else:
-            plot_logger.add_row_to_wandb_table(f"RL-Agent {inter_test_idx}", gantt_chart, **measures)
+            plot_logger.add_row_to_wandb_table(
+                f"RL-Agent {inter_test_idx}", gantt_chart, **measures
+            )
 
 
-def test_model(env_config: Dict, data: List[List[Task]], logger: Logger, plot: bool = None, log_episode: bool = None,
-               model=None, heuristic_id: str = None, intermediate_test_idx=None) -> dict:
+def test_model(
+    env_config: Dict,
+    data: List[List[Task]],
+    logger: Logger,
+    plot: bool = None,
+    log_episode: bool = None,
+    model=None,
+    heuristic_id: str = None,
+    intermediate_test_idx=None,
+) -> dict:
     """
     This function tests a model in the passed environment for all problem instances passed as data_test and returns an
     evaluation summary
@@ -192,7 +228,13 @@ def test_model(env_config: Dict, data: List[List[Task]], logger: Logger, plot: b
 
         # log results. Creating wandb table
         if log_episode:
-            log_results(logger, intermediate_test_idx, heuristic_id, environment, evaluation_handler)
+            log_results(
+                logger,
+                intermediate_test_idx,
+                heuristic_id,
+                environment,
+                evaluation_handler,
+            )
 
         # plot results
         if plot:
@@ -202,8 +244,14 @@ def test_model(env_config: Dict, data: List[List[Task]], logger: Logger, plot: b
     return evaluation_handler.evaluate_test()
 
 
-def test_model_and_heuristic(config: dict, model, data_test: List[List[Task]], logger: Logger,
-                             plot_ganttchart: bool = False, log_episode: bool = False) -> dict:
+def test_model_and_heuristic(
+    config: dict,
+    model,
+    data_test: List[List[Task]],
+    logger: Logger,
+    plot_ganttchart: bool = False,
+    log_episode: bool = False,
+) -> dict:
     """
     Test model and agent_heuristics len(data) times and returns results
 
@@ -217,24 +265,32 @@ def test_model_and_heuristic(config: dict, model, data_test: List[List[Task]], l
     :return: Dict with evaluation_result dicts for the agent and all heuristics which were tested
 
     """
-    print('Testing model, heuristics and solver... ')
+    print("Testing model, heuristics and solver... ")
     results = {}
 
-    test_kwargs = {'env_config': config, 'data': data_test, 'logger': logger,
-                   'plot': plot_ganttchart, 'log_episode': log_episode}
+    test_kwargs = {
+        "env_config": config,
+        "data": data_test,
+        "logger": logger,
+        "plot": plot_ganttchart,
+        "log_episode": log_episode,
+    }
 
     # test agent
     res = test_model(model=model, **test_kwargs)
-    results.update({'agent': res})
+    results.update({"agent": res})
 
     # test heuristics
-    for heuristic in config.get('test_heuristics', TEST_HEURISTICS):
+    for heuristic in config.get("test_heuristics", TEST_HEURISTICS):
         res = test_model(heuristic_id=heuristic, **test_kwargs)
         results.update({heuristic: res})
 
     # test solver and calculate optimality gap
-    res = test_solver(config, data_test, logger)
-    results.update({'solver': res})
+    test_solver = config.get("test_solver", True)
+    if test_solver:
+        print("Testing solver...")
+        res = test_solver(config, data_test, logger)
+        results.update({"solver": res})
 
     results = EvaluationHandler.add_solver_gap_to_results(results)
 
@@ -243,14 +299,31 @@ def test_model_and_heuristic(config: dict, model, data_test: List[List[Task]], l
 
 def get_perser_args():
     # Arguments for function
-    parser = argparse.ArgumentParser(description='Test Agent in Production Scheduling Environment')
+    parser = argparse.ArgumentParser(
+        description="Test Agent in Production Scheduling Environment"
+    )
 
-    parser.add_argument('-fp', '--config_file_path', type=str, required=True,
-                        help='Path to config file you want to use for training')
-    parser.add_argument('-plot', '--plot-ganttchart', dest="plot_ganttchart", action="store_true",
-                        help='Enable or disable model result plot.')
-    parser.add_argument('-gd', '--graphs_directory', type=str, default="./images/",
-                    help='Directory to save the comparison graphs (default: ./images/)')
+    parser.add_argument(
+        "-fp",
+        "--config_file_path",
+        type=str,
+        required=True,
+        help="Path to config file you want to use for training",
+    )
+    parser.add_argument(
+        "-plot",
+        "--plot-ganttchart",
+        dest="plot_ganttchart",
+        action="store_true",
+        help="Enable or disable model result plot.",
+    )
+    parser.add_argument(
+        "-gd",
+        "--graphs_directory",
+        type=str,
+        default="./images/",
+        help="Directory to save the comparison graphs (default: ./images/)",
+    )
 
     args = parser.parse_args()
 
@@ -268,22 +341,30 @@ def main(external_config=None):
     data = load_data(config)
 
     # Random seed for numpy as given by config
-    np.random.seed(config['seed'])
+    np.random.seed(config["seed"])
 
     # get model path from config
     best_model_path = ModelHandler.get_best_model_path(config)
 
     # create logger
     logger = Logger(config=config)
-    model = get_agent_class_from_config(config=config).load(file=best_model_path, config=config, logger=logger)
-    results = test_model_and_heuristic(config=config, model=model, data_test=data,
-                                       plot_ganttchart=parse_args.plot_ganttchart, logger=logger)
+    model = get_agent_class_from_config(config=config).load(
+        file=best_model_path, config=config, logger=logger
+    )
+    results = test_model_and_heuristic(
+        config=config,
+        model=model,
+        data_test=data,
+        plot_ganttchart=parse_args.plot_ganttchart,
+        logger=logger,
+    )
     print(results)
     plt.show()
-    
+
     directory = parse_args.graphs_directory
     save_comparison_graphs(results, directory)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     main()
