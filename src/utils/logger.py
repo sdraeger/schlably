@@ -233,6 +233,8 @@ class Logger:
                 log_data.append(evaluation_results[agent]["makespan_mean"])
                 log_data.append(evaluation_results[agent]["rew_std"])
                 log_data.append(evaluation_results[agent]["tardiness_std"])
-                log_data.append(evaluation_results[agent]["gap_to_solver"])
+                # Solver can be skipped, so check if key exists
+                log_data.append(evaluation_results[agent].get("gap_to_solver"))
+
                 final_evaluation_table.add_data(*log_data)
             self.wandb_run.log({"Final Evaluation Table": final_evaluation_table})

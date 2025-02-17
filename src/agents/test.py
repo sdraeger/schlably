@@ -286,14 +286,14 @@ def test_model_and_heuristic(
         results.update({heuristic: res})
 
     # test solver and calculate optimality gap
-    test_solver = config.get("test_solver", True)
-    if test_solver:
+    do_test_solver = config.get("test_solver", True)
+
+    if do_test_solver:
         print("Testing solver...")
-        res = test_solver(config, data_test, logger)
-        results.update({"solver": res})
+        solver_result = test_solver(config, data_test, logger)
+        results.update({"solver": solver_result})
 
     results = EvaluationHandler.add_solver_gap_to_results(results)
-
     return results
 
 
