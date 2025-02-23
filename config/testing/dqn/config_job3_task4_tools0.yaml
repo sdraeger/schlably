@@ -15,7 +15,7 @@ reward_strategy: dense_makespan_reward
                   # strength
 reward_scale: 1
 # (O)   [string]  Name of the model you want to load for testing
-saved_model_name: example_dqn_agent
+saved_model_name: job3_task4_tools0_dqn
 # (R)   [int]     Seed for all pseudo random generators (random, numpy, torch)
 seed: 2
 # (R)   [string]  Set an individual description that you can identify this
@@ -27,6 +27,6 @@ experiment_save_path: models
 # (O)   [int]:    wandb mode choose: choose from [0: no wandb, 1: wandb_offline, 2: wandb_online]
 wandb_mode: 0
 # (O)   [string]  Set a wandb project where you want to upload all wandb logs
-wandb_project: project-1
+wandb_project: jssp-dqn
 # (R)   List[str] List of all heuristics and algorithms against which to benchmark
 test_heuristics: ['rand', 'EDD', 'SPT', 'MTR', 'LTR']

@@ -88,3 +88,4 @@ test_heuristics: ["rand", "EDD", "SPT", "MTR", "LTR"]
 # EvaluationHandler.evaluate_test() in utils.evaluations for suitable metrics or add one.
 # In a wandb hyperparameter sweep this will be usable as objective metric.
 success_metric: makespan_mean
+test_solver: False

@@ -30,3 +30,4 @@ wandb_mode: 0
 wandb_project: project-1
 # (R)   List[str] List of all heuristics and algorithms against which to benchmark
 test_heuristics: ["rand", "EDD", "SPT", "MTR", "LTR"]
+test_solver: False
