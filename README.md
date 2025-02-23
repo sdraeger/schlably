@@ -54,6 +54,10 @@ To train your own model, proceed as follows:
 Immediately after training the model will be tested and benchmarked against all heuristics included in the TEST_HEURISTICS constant located in [src/agents/test.py](src/agents/test.py)
 The trained model can be accessed via the experiment_save_path and saved_model_name you specified in the training config.
 
+An example shell command to run training with the PPO algorithm and a 80x15 scheduling problem is given below:
+````bash
+python -m src.agents.train -fp training/ppo/config_job80_task15_tools0.yaml
+````
 
 ​
 ### Testing
