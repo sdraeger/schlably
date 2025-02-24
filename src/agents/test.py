@@ -321,8 +321,8 @@ def get_perser_args():
         "-gd",
         "--graphs_directory",
         type=str,
-        default="./images/",
-        help="Directory to save the comparison graphs (default: ./images/)",
+        default="./data/visuals/",
+        help="Directory to save the comparison graphs (default: ./data/visuals/)",
     )
 
     args = parser.parse_args()
