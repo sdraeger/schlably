@@ -30,13 +30,15 @@ def save_comparison_graphs(results, directory):
         if scheduler != "solver":
             rew_mean[scheduler] = results[scheduler]["rew_mean"]
             tardiness_mean[scheduler] = results[scheduler]["tardiness_mean"]
-            gap_to_solver[scheduler] = results[scheduler]["gap_to_solver"]
+            if "gap_to_solver" in results[scheduler]:
+                gap_to_solver[scheduler] = results[scheduler]["gap_to_solver"]
             
         makespan_mean[scheduler] = results[scheduler]["makespan_mean"]
         
-
     metrics = {"Average Reward": rew_mean, "Average Tardiness":tardiness_mean, 
-                "Average Makespan": makespan_mean, "Gap To Solver": gap_to_solver}
+                "Average Makespan": makespan_mean}
+    if len(gap_to_solver) > 0:
+        metrics["Gap To Solver"] = gap_to_solver
 
     for metric_name in metrics:
         __generate_graph__(metric_name, metrics[metric_name], directory)
