@@ -99,4 +99,6 @@ config/testing/ppo_masked/*
 
 __pycache__/
 *.pkl
-**/*.pkl
+*.pkl
+*.csv
+*.png
